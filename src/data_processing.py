@@ -9,7 +9,7 @@ def get_dataloaders():
         ]
     )
 
-    batch_size = 4
+    batch_size = 32
     train = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
     train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True, num_workers=2)
 

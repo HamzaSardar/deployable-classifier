@@ -19,13 +19,14 @@ def train(train_dl, model, optim, loss_fn):
             out = model(x)
             loss = loss_fn(out, label)
 
-            if i % 100 == 0:
-                print(f'epoch: {epoch + 1}, loss: {loss.value()}')
+            if i % 2000 == 0:
+                print(f'epoch: {epoch + 1}, loss: {loss.item()}')
             
             loss.backward()
             optim.step()
 
-        print('done')
+    torch.save(model.state_dict(), 'model.pt')
+    print('done')
                
 
 if __name__=="__main__":
