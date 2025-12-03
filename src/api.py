@@ -32,6 +32,7 @@ async def load_model():
     """
     global model, device
 
+    # instantiate model and load in weights
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = Classifier()
     model.load_state_dict(torch.load(MODEL_PATH, map_location=device))

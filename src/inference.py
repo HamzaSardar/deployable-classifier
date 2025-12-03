@@ -10,11 +10,10 @@ from src.data_processing import get_dataloaders
 
 MODEL_PATH='./model.pt'
 
-def infer():
-    pass
-
-
 if __name__=="__main__":
+    """
+    Testing out local inference to check model performance.
+    """
     model = Classifier()
     model.load_state_dict(torch.load(MODEL_PATH))
 
@@ -23,12 +22,6 @@ if __name__=="__main__":
     _, test_loader = get_dataloaders()
 
     test_loader, model = accelerator.prepare(test_loader, model)
-
-    # dataiter = iter(test_loader)
-    # images, labels = next(dataiter)
-
-    # plt.imshow(torchvision.utils.make_grid(images))
-    # print('GroundTruth: ', ' '.join(f'{classes[labels[j]]:5s}' for j in range(4)))
     correct = 0
     total = 0
 

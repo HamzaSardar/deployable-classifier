@@ -1,7 +1,10 @@
+from typing import Callable
+
 import torch
-import torchvision
 import torch.optim as optim
+from torch.optim import Optimizer
 import torch.nn as nn
+from torch.utils.data import DataLoader
 
 from accelerate import Accelerator
 
@@ -9,8 +12,17 @@ from src.model import Classifier
 from src.data_processing import get_dataloaders
 
 
-def train(train_dl, model, optim, loss_fn):
-    for epoch in range(10):
+def train(
+    train_dl: DataLoader, 
+    model: Callable, 
+    optim: Optimizer, 
+    loss_fn: Callable, 
+    n_epochs:int=10,
+    model_path: str='model.pt'):
+    """
+    Simple training loop for classification CNN.
+    """
+    for epoch in range(n_epochs):
         loss = 0
         for i, data in enumerate(train_dl):
             x, label = data
@@ -25,7 +37,7 @@ def train(train_dl, model, optim, loss_fn):
             loss.backward()
             optim.step()
 
-    torch.save(model.state_dict(), 'model.pt')
+    torch.save(model.state_dict(), model_path)
     print('done')
                
 
