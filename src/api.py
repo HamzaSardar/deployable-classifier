@@ -42,7 +42,7 @@ async def load_model():
     print('Model loaded.')
 
 @app.post('/predict')
-async def predict(file: UploadFile = File(...)):
+async def predict(file: UploadFile = File(...), tol=0.5):
     # read in image
     _image = await file.read()
     image = Image.open(io.BytesIO(_image))
@@ -52,6 +52,10 @@ async def predict(file: UploadFile = File(...)):
         out = model(image_t)
         _, predicted = torch.max(out, 1)
 
-    predicted_class = CLASSES[predicted.item()]
+    if predicted.item() < tol:
+        predicted_class = 'Unknown'
+    else:
+        predicted_class = CLASSES[predicted.item()]
+
     return {"predicted_class": predicted_class}
 
