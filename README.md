@@ -4,8 +4,8 @@ A modular, pytorch-based CNN classifier for CIFAR-10, packaged into a RESTful AP
 ## TODO:
 - [x] ~~Train and test basic model.~~
 - [x] ~~Write the api-based inference script.~~
-- [ ] Test how the model handles OOD images.
-- [ ] Add batching or queueing to inference script.
+- [x] Test how the model handles OOD images.
+- [x] Add batching or queueing to inference script.
 - [ ] Add detection for performance degradation/increasing error.
 - [ ] Test robustness to adversarial inputs.
 
@@ -25,3 +25,10 @@ accelerate launch -m src.train
 ```
 uvicorn src.api:app --reload &
 ```
+
+4. Run test inference scripts:
+```
+python -m src.api_infer_serial --config=src/configs/common.py # for serial mode
+python -m src.api_infer_batched --config=src/configs/common.py # for batched mode
+```
+
