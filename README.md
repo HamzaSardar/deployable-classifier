@@ -4,8 +4,8 @@ A modular, pytorch-based CNN classifier for CIFAR-10, packaged into a RESTful AP
 ## TODO:
 - [x] ~~Train and test basic model.~~
 - [x] ~~Write the api-based inference script.~~
-- [x] Test how the model handles OOD images.
-- [x] Add batching or queueing to inference script.
+- [x] ~~Test how the model handles OOD images.~~
+- [x] ~~Add batching or queueing to inference script.~~
 - [ ] Add detection for performance degradation/increasing error.
 - [ ] Test robustness to adversarial inputs.
 
