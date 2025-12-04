@@ -36,7 +36,5 @@ def main(_):
             print(predict_image(img_path))
 
 if __name__=='__main__':
-    # result = predict_image(Path('/Users/user/Downloads/cifar10_airplane1.jpg'))
-    # print(result)
     app.run(main)
 
