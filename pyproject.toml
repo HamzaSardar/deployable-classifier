@@ -1,0 +1,31 @@
+[project]
+name = "deployable-classifier"
+version = "0.1.0"
+requires-python = ">=3.12.1"
+dependencies = [
+    "torch==2.9.1",
+    "torchvision==0.24.1",
+    "accelerate==1.12.0",
+    "numpy==2.3.5",
+    "pillow==12.0.0",
+    "matplotlib==3.10.7",
+    "fastapi==0.123.0",
+    "uvicorn==0.38.0",
+    "python-multipart==0.0.20",
+    "pydantic==2.12.5",
+    "httpx==0.28.1",
+    "huggingface-hub==1.1.7",
+    "safetensors==0.7.0",
+    "typer-slim==0.20.0",
+    "tqdm==4.67.1",
+    "requests==2.32.5",
+    "pyyaml==6.0.3",
+    "psutil==7.1.3",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
