@@ -13,7 +13,7 @@ A modular, pytorch-based CNN classifier for CIFAR-10, packaged into a RESTful AP
 
 1. Install dependencies:
 ```
-uv pip install -r requirements.txt
+uv sync
 ```
 
 2. Train model:
