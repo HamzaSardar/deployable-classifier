@@ -1,59 +1,79 @@
 import io
-from pathlib import Path
+import os
 from collections import deque
 import asyncio
 
 import torch
+import torch.nn.functional as F
 from torchvision import transforms
 from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import JSONResponse
+from prometheus_fastapi_instrumentator import Instrumentator
+import mlflow
 from PIL import Image
 
 from src.model import Classifier
-from src.data_processing import get_dataloaders
 
 
-MODEL_PATH=Path('./src/model.pt')
+run_id = os.environ.get("MLFLOW_RUN_ID")
 
-CLASSES = ('plane', 'car', 'bird', 'cat',
-               'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+CLASSES = (
+    "plane",
+    "car",
+    "bird",
+    "cat",
+    "deer",
+    "dog",
+    "frog",
+    "horse",
+    "ship",
+    "truck",
+)
 CONFIDENCE_THRESHOLD = 0.5
 
-app = FastAPI(title='Image Classifier API')
+app = FastAPI(title="Image Classifier API")
 model = None
 device = None
-transform = transforms.Compose([
-    transforms.Resize((32, 32)),  # Adjust to your modeljs input size
-    transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # Adjust to your normalization
-])
+transform = transforms.Compose(
+    [
+        transforms.Resize((32, 32)),  # Adjust to your modeljs input size
+        transforms.ToTensor(),
+        transforms.Normalize(
+            (0.5, 0.5, 0.5), (0.5, 0.5, 0.5)
+        ),  # Adjust to your normalization
+    ]
+)
 
 request_queue = deque()
 BATCH_SIZE = 16
 BATCH_TIMEOUT = 0.1
 processing_task = None
+Instrumentator().instrument(app).expose(app)
 
-@app.on_event('startup')
+
+@app.on_event("startup")
 async def load_model():
     """
     Load model on server start.
     """
     global model, device
 
+    if run_id is None:
+        raise RuntimeError("MLFLOW_RUN_ID environment variable is not set.")
+
     # instantiate model and load in weights
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = Classifier()
-    model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = mlflow.pytorch.load_model(f"runs:/{run_id}/model")
     model.to(device)
     model.eval()
 
     processing_task = asyncio.create_task(process_batches())
 
-    print('Model loaded.')
+    print("Model loaded.")
+
 
 async def process_batches():
     """
-        Processes queued requests.
+    Processes queued requests.
     """
     while True:
         if len(request_queue) == 0:
@@ -79,15 +99,14 @@ async def process_batches():
 
         for i, f in enumerate(future):
             if confidence[i].item() < CONFIDENCE_THRESHOLD:
-                predicted_class = 'Unknown'
+                predicted_class = "Unknown"
             else:
                 predicted_class = CLASSES[pred[i].item()]
-            result = {
-                'predicted_class': predicted_class
-            }
+            result = {"predicted_class": predicted_class}
             f.set_result(result)
         await asyncio.sleep(0.01)
-            
+
+
 @app.post("/predict_batched")
 async def predict_batched(file: UploadFile = File(...)):
     "Batched endpoint"
@@ -102,7 +121,8 @@ async def predict_batched(file: UploadFile = File(...)):
     result = await future
     return result
 
-@app.post('/predict')
+
+@app.post("/predict")
 async def predict(file: UploadFile = File(...)):
     # read in image
     _image = await file.read()
@@ -111,12 +131,12 @@ async def predict(file: UploadFile = File(...)):
     image_t = transform(image).unsqueeze(0)
     with torch.no_grad():
         out = model(image_t)
+        out = F.softmax(out, dim=1)
         confidence, predicted = torch.max(out, 1)
 
     if confidence.item() < CONFIDENCE_THRESHOLD:
-        predicted_class = 'Unknown'
+        predicted_class = "Unknown"
     else:
         predicted_class = CLASSES[predicted.item()]
 
     return {"predicted_class": predicted_class}
-

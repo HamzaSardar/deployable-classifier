@@ -1,0 +1,110 @@
+services:
+  database:
+    image: "postgres:16"
+    ports:
+      - 5432:5432
+    volumes:
+      - ./db-data/:/var/lib/postgresql/data/ 
+    environment:
+      POSTGRES_USER: hamza
+      POSTGRES_PASSWORD: fuzzytestdragon
+      POSTGRES_DB: default_database
+      
+  minio:
+    image: quay.io/minio/minio:latest
+    ports:
+      - 9000:9000
+      - 9001:9001
+    command: [ "server", "--console-address", ":9001", "/data"]
+    volumes:
+      - data-minio:/data
+    environment:
+      MINIO_ROOT_USER: hamza
+      MINIO_ROOT_PASSWORD: fuzzytestdragon
+
+  minio-buckets:
+    image: quay.io/minio/mc:latest
+    depends_on:
+      - minio
+    restart: on-failure
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set dockerminio http://minio:9000 hamza fuzzytestdragon;
+      /usr/bin/mc mb dockerminio/cifar10-classifier;
+      exit 0;
+      "
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow
+    ports:
+      - "5000:5000"
+    depends_on:
+      - database
+      - minio-buckets
+    command:
+      - mlflow
+      - server
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5000"
+      - --allowed-hosts
+      - mlflow:5000,localhost:5000,api:8000
+      - --backend-store-uri
+      - postgresql://hamza:fuzzytestdragon@database:5432/default_database
+      - --default-artifact-root
+      - s3://cifar10-classifier
+    environment:
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: hamza
+      AWS_SECRET_ACCESS_KEY: fuzzytestdragon
+
+  api:
+    build: .
+    ports:
+      - 8000:8000
+    entrypoint: ["uv", "run", "uvicorn", "src.api:app", "--host", "0.0.0.0", "--port", "8000"]
+    depends_on:
+      - mlflow
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_RUN_ID: ae295118ae214ec19d658d7dc5d2ea54
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: hamza
+      AWS_SECRET_ACCESS_KEY: fuzzytestdragon
+    restart: "on-failure:5"
+      
+  ml-pipeline:
+    build: .
+    depends_on:
+      - mlflow
+    environment:
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: hamza
+      AWS_SECRET_ACCESS_KEY: fuzzytestdragon
+    volumes:
+      - cifar-10-data:/app/data/
+    restart: "on-failure:5"
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/:/etc/prometheus
+      - prometheus_data:/prometheus
+    ports:
+      - 9090:9090
+
+  grafana:
+    image: grafana/grafana
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - 3000:3000
+
+volumes:
+  data-minio:
+  cifar-10-data:
+  prometheus_data:
+  grafana_data:
