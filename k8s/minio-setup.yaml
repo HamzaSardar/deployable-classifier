@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-setup
+spec:
+  template:
+    spec:
+      containers:
+        - name: mc
+          image: quay.io/minio/mc:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              mc alias set dockerminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+              mc mb dockerminio/cifar10-classifier;
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: classifier-secrets
+                  key: minio-user
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: classifier-secrets
+                  key: minio-password
+      restartPolicy: OnFailure
+

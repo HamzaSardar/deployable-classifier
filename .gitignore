@@ -208,6 +208,6 @@ __marimo__/
 
 /data/*
 *.pt
-./db-data/
-./prometheus/
-./src/data
+db-data/
+prometheus/
+src/data
