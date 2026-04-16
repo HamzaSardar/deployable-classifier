@@ -14,8 +14,6 @@ from PIL import Image
 from src.model import Classifier
 
 
-run_id = os.environ.get("MLFLOW_RUN_ID")
-
 CLASSES = (
     "plane",
     "car",
@@ -55,14 +53,14 @@ async def load_model():
     """
     Load model on server start.
     """
-    global model, device
+    global model, device, processing_task
 
-    if run_id is None:
-        raise RuntimeError("MLFLOW_RUN_ID environment variable is not set.")
+    # if run_id is None:
+    #     raise RuntimeError("MLFLOW_RUN_ID environment variable is not set.")
 
     # instantiate model and load in weights
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = mlflow.pytorch.load_model(f"runs:/{run_id}/model")
+    model = mlflow.pytorch.load_model(f"models:/cifar10-classifier/Production")
     model.to(device)
     model.eval()
 

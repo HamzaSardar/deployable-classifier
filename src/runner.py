@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 from accelerate import Accelerator
 import mlflow
+from mlflow.tracking import MlflowClient
 from absl import app, flags
 from ml_collections import config_flags
 
@@ -80,6 +81,18 @@ def main(_: list[str]) -> None:
                 loss_fn=loss,
                 n_epochs=absl_cfg.training.n_epochs,
                 run_id=active_run_id,
+            )
+
+            model_uri = f"runs:/{active_run_id}/model"
+            mlflow.register_model(model_uri=model_uri, name="cifar10-classifier")
+
+            client = MlflowClient()
+
+            latest_version = client.get_latest_versions(
+                name="cifar10-classifier", stages=["none"]
+            )[0].version
+            client.transition_model_version_stage(
+                name="cifar10-classifier", version=latest_version, stage="Production"
             )
 
         if absl_flags.eval or absl_flags.allrun:

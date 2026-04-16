@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: train-classifier
+spec:
+  template:
+    spec:
+      containers:
+        - name: train
+          image: deployable-classifier:latest
+          imagePullPolicy: Never
+          command: ["uv", "run", "accelerate", "launch", "-m", "src.runner", "--allrun"]
+          env:
+            - name: MLFLOW_S3_ENDPOINT_URL
+              value: http://minio:9000
+            - name: MLFLOW_TRACKING_URI
+              value: http://mlflow:5000
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: classifier-secrets
+                  key: minio-user
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: classifier-secrets
+                  key: minio-password
+      restartPolicy: OnFailure
